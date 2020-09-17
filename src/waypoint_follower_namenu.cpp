@@ -547,7 +547,7 @@ public:
 					parking_test_count_ = 0;
 			}
 		}
-		else if(static_lane_change_count_ ==1 || static_lane_change_count_==2){//원래는 주차 밑에, static에 해당하는 state로 기입해야 함. 이를위해 parking_count를 -2로 init함.
+		else if((static_lane_change_count_ ==1 || static_lane_change_count_==2)&&(waypoints_[0].mission_state==9)){//원래는 주차 밑에, static에 해당하는 state로 기입해야 함. 이를위해 parking_count를 -2로 init함.
 			ex_lane_final_ = lane_final_;
 			private_nh_.getParam("/waypoint_follower_node/lane_final", lane_final_);
 			if(lane_final_ != ex_lane_final_){
@@ -568,7 +568,7 @@ public:
 				
 				if(dist < 1.7 && next_mission_state_ == 1) {
 					while(1){
-						if(!is_parking_test_){
+						if(parking_count_==-1){
 							ROS_INFO("PARKING SIGN DETECTED. WAITING FOR SIGN.");
 							ackermann_msg_.header.stamp = ros::Time::now();
               				ackermann_msg_.drive.speed = 0.0;
@@ -576,9 +576,13 @@ public:
 
                 			ackermann_pub_.publish(ackermann_msg_);
 							is_control_ = false;
-						}
+							//is_lane_ = false;
+							cout << "##############FUCK##############"<<endl;			
+							parking_count_ =0;
+							private_nh_.setParam("/waypoint_loader_node/parking_state", 0);
+							ros::Duration(2.0).sleep();
 //LiDAR한테 PUB
-						if(!is_parking_test_&&(parking_test_count_==0)){
+/*						if(!is_parking_test_&&(parking_test_count_==0)){
 							parking_count_ = 0;
 							parking_test_count_++;
 							ackermann_msg_.header.stamp = ros::Time::now();
@@ -604,10 +608,9 @@ public:
 							is_lane_ = false; //0908
 							break;
 							}
-						}
+						}*/}
 						break;
-					}
-
+					}	
 				}
 		
 				else if( dist < 1.5 && next_mission_state_ == 2) {
@@ -627,7 +630,7 @@ public:
 
 						is_control_ = false;
 						ros::Time::init();
-						ros::Duration(7,0).sleep();
+						ros::Duration(7.0).sleep();
 
 						private_nh_.setParam("/waypoint_loader_node/parking_state", parking_count_);
 						ackermann_msg_.header.stamp = ros::Time::now();
@@ -676,22 +679,22 @@ public:
 
 				else if(dist < 7.0 && next_mission_state_ == 6) {
 					//Intersection
-					before_intersection_ = true;
-					private_nh_.setParam("/is_intersection",true);
+					//before_intersection_ = true;
+					//private_nh_.setParam("/is_intersection",true);
 	
 				}
 
 				else if(dist<7.0 && next_mission_state_ == 7){
 				//Kidszone
-					before_intersection_ = true;
-					private_nh_.setParam("/is_intersection",true);
+					//before_intersection_ = true;
+					//private_nh_.setParam("/is_intersection",true);
 
 				}
 		    	else if(dist < 7.0 && next_mission_state_ == 8) {
 				//TODO: 동적장애물.//속도느리게해주기~~.
 				}
 
-				else if (next_mission_state_ ==10){//TODO: waypoints_[0].mission_stae = 9 일떄로 수정 해야함 
+				else if (waypoints_[0].mission_state==9){//TODO: waypoints_[0].mission_stae = 9 일떄로 수정 해야함 
 					if(is_obs_detect_){
 						cout<<"lane_number : "<< lane_number_ <<endl;
 						cout<<"is_onlane : "<< is_onLane_ <<endl;
@@ -722,10 +725,21 @@ public:
 					}
 				}
 
-		    	else if(dist < 7.0 && next_mission_state_ == 10) {
+		    	else if(dist < 3.0 && next_mission_state_ == 10) {
 					//TODO:intersection
-					before_intersection_ = true;
-					private_nh_.setParam("/is_intersection",true);
+					//before_intersection_ = true;
+					//private_nh_.setParam("/is_intersection",true);
+
+					ROS_INFO("GOAL POINT READCHED. TERMINATING WAYPOINT FOLLOWER.");//for 학교 운동장 		
+					
+					is_control_ = false;
+					ackermann_msg_.header.stamp = ros::Time::now();
+					ackermann_msg_.drive.speed = 0.0;
+					ackermann_msg_.drive.steering_angle = 0.0;
+                			
+					ackermann_pub_.publish(ackermann_msg_);
+					
+					ros::shutdown();
 				}
 
 		    	else if(dist < 7.0 && next_mission_state_ == 11) {
@@ -770,7 +784,7 @@ public:
 				double cur_steer = calcSteeringAngle();
 			//curvature 계산이 잘 된다면 아래처럼 구간별 제어가 아닌 curvature를 통한 제어를 넣는다.
 		
-				if((parking_count_== -1)){
+				if(parking_count_== -1){
 					speed = decelate_speed_;
 					lookahead_dist_= decelate_lookahead_dist_;
 				}
@@ -795,7 +809,7 @@ public:
 					lookahead_dist_= decelate_lookahead_dist_;
 				}
 
-				if(next_mission_state_ ==10 && is_onLane_){
+				else if(next_mission_state_ ==10 && is_onLane_){
 					speed = 2.0;
 					lookahead_dist_= 6.5;
 				}
