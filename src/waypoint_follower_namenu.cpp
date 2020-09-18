@@ -16,6 +16,8 @@
 #include <math.h>
 #include "ros/time.h"
 
+#include "time.h"
+
 using namespace std;
 
 class WaypointFollower {
@@ -196,7 +198,7 @@ public:
 
 		ROS_INFO("WAYPOINT FOLLOWER INITIALIZED.");
 
-		parking_count_ = -1;
+		parking_count_ = -2;
 		parking_test_count_=0;
 		lookahead_dist_ = 7.0;
 
@@ -261,6 +263,8 @@ public:
 		waypoints_ = lane_msg->waypoints;
 		waypoints_size_ = waypoints_.size();
 		ROS_INFO("LANE CALLBACK");
+
+		is_onLane_ = lane_msg->onlane;
 
 		is_lane_ = true;
 
@@ -577,7 +581,6 @@ public:
                 			ackermann_pub_.publish(ackermann_msg_);
 							is_control_ = false;
 							//is_lane_ = false;
-							cout << "##############FUCK##############"<<endl;			
 							parking_count_ =0;
 							private_nh_.setParam("/waypoint_loader_node/parking_state", 0);
 							ros::Duration(2.0).sleep();
@@ -694,7 +697,7 @@ public:
 				//TODO: 동적장애물.//속도느리게해주기~~.
 				}
 
-				else if (waypoints_[0].mission_state==9){//TODO: waypoints_[0].mission_stae = 9 일떄로 수정 해야함 
+				else if (next_mission_state_ == 10){//TODO: waypoints_[0].mission_stae = 9 일떄로 수정 해야함
 					if(is_obs_detect_){
 						cout<<"lane_number : "<< lane_number_ <<endl;
 						cout<<"is_onlane : "<< is_onLane_ <<endl;
@@ -703,18 +706,21 @@ public:
 							if(lane_number_ ==0){
 								lane_number_ = 1;
 								is_lane_ = false;
-							//	is_control_ = false;
-								static_lane_change_count_ ++;
+								//is_control_ = false;
+								static_lane_change_count_ = 1;
 								is_onLane_ =false;
 								cout<<"ONLANE FALSE"<<endl;
+
 							}
-							else if(lane_number_ ==1){
+							else if(lane_final_ ==1){
+
 								lane_number_ = 0;
 								is_lane_ = false;
-							//	is_control_ = false;
-								static_lane_change_count_ ++;
+								//is_control_ = false;
+								static_lane_change_count_ = 2;
 								is_onLane_ =false ;
 								cout<<"ONLANE FALSE"<<endl;
+			
 							}
 						cout<<"Lane change to"<<lane_number_<< endl;
 						cout<<"static_lane_change_count"<<static_lane_change_count_ <<endl;
@@ -724,7 +730,7 @@ public:
 						//cout<<"#####None obs######"<<endl;
 					}
 				}
-
+				/*
 		    	else if(dist < 3.0 && next_mission_state_ == 10) {
 					//TODO:intersection
 					//before_intersection_ = true;
@@ -741,7 +747,7 @@ public:
 					
 					ros::shutdown();
 				}
-
+				*/
 		    	else if(dist < 7.0 && next_mission_state_ == 11) {
 					//TODO:intersection
 					before_intersection_ = true;
@@ -849,10 +855,7 @@ public:
 			is_state_change_ = false;
 			is_retrieve_ = false;
 			before_intersection_ =false;
-	
 
-		//curvature 정상적으로 산출되면, 적당한 곡선의 기준치를 파악하여 초기화해주고, 이것보다 크면 감속,작으면 가속하도록 하는 제어를 넣어준다.curvature_ = 0.6;
-		
 			index_msg_.waypoint_index = waypoints_[target_index_].waypoint_index;
 			index_msg_.lane_number = lane_number_;
 			index_msg_.mission_state = waypoints_[target_index_].mission_state;
