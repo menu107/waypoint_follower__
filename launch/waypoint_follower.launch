@@ -3,7 +3,7 @@
 	<arg name="init_speed" default="4.0" />
 	<arg name="decelate_speed" default="2.5" />
 	<arg name="parking_speed" default="1.5" /> 
-	<arg name="backward_movement_speed" default="-1.8" /> 
+	<arg name="backward_movement_speed" default="-2.5" /> 
 	<arg name="init_lookahead_distance" default="8.0" />
 	<arg name="decelate_lookahead_distance" default="6.0" />
 	<arg name="parking_lookahead_distance" default="1.5" />
@@ -11,7 +11,7 @@
 	<arg name="first_state_index" default="22" />
 	<arg name="second_state_index" default="29" />
 	<arg name="third_state_index" default="37" />
-	<arg name="fourth_state_index" default="71" />
+	<arg name="fourth_state_index" default="52" />
 	<arg name="fifth_state_index" default="85" />
 	<arg name="sixth_state_index" default="101" />
 	<arg name="seventh_state_index" default="111" />

@@ -6,7 +6,6 @@
 #include <waypoint_maker/State.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Bool.h>
-#include <std_msgs/Int32.h>
 #include <geometry_msgs/Pose2D.h>
 
 #include<iostream>
@@ -16,6 +15,8 @@
 #include <cmath>
 #include <math.h>
 #include "ros/time.h"
+
+#include "time.h"
 
 using namespace std;
 
@@ -50,9 +51,9 @@ private:
 	vector<waypoint_maker::Waypoint> waypoints_;
 
 	//speed
-	double cur_speed_;
 	double init_speed_;
 	double decelate_speed_;
+	//double accelate_speed_;
 	double parking_speed_;
 	double backward_movement_speed_;
 
@@ -60,6 +61,7 @@ private:
 	double lookahead_dist_;
 	double init_lookahead_dist_;
 	double decelate_lookahead_dist_;
+	//double accelate_lookahead_dist_;
 	double parking_lookahead_dist_;
 
 	//state, index, lane number
@@ -134,9 +136,6 @@ private:
 	ros::Subscriber lane_sub_;
 	ros::Subscriber parking_area_sub_;
 	ros::Subscriber static_lidar_sub_;
-	
-	
-	ros::Subscriber speed_sub_;//for serial read
 
 	ackermann_msgs::AckermannDriveStamped ackermann_msg_;
 	waypoint_maker::Waypoint index_msg_;
@@ -166,9 +165,6 @@ public:
 		lane_sub_ = nh_.subscribe("final_waypoints", 10, &WaypointFollower::LaneCallback, this);
 		parking_area_sub_ = nh_.subscribe("parking_area",10,&WaypointFollower::ParkingAreaCallback,this);
 		static_lidar_sub_ = nh_.subscribe("static_obs",10,&WaypointFollower::StaticLidarCallback,this);
-		
-		
-		speed_sub_ = nh_.subscribe("serial_data",10,&WaypointFollower::SerialCallback,this);//for serial read
 
 		private_nh_.getParam("/waypoint_follower_node/init_speed", init_speed_);
 		private_nh_.getParam("/waypoint_follower_node/decelate_speed", decelate_speed_);
@@ -200,7 +196,7 @@ public:
 
         ex_lane_final_ = lane_final_;
 
-		//ROS_INFO("WAYPOINT FOLLOWER INITIALIZED.");
+		ROS_INFO("WAYPOINT FOLLOWER INITIALIZED.");
 
 		parking_count_ = -1;
 		parking_test_count_=0;
@@ -225,7 +221,6 @@ public:
 		is_obs_detect_ = false;
 		static_lane_change_count_ = 0;
 
-		cur_speed_ = 0.0;
 		cur_course_ = 0.0;
 		lane_number_ = 0;
 		waypoints_size_ = 0;
@@ -245,18 +240,13 @@ public:
 		cur_pose_.header = odom_msg->header;
 		cur_pose_.pose.position = odom_msg->pose.pose.position;
         is_pose_ = true;
-		//ROS_INFO("CURRENT POSE CALLBACK");
+		ROS_INFO("CURRENT POSE CALLBACK");
 	}
 
 	void CourseCallback(const ackermann_msgs::AckermannDriveStamped::ConstPtr &course_msg) {
-		//cur_speed_ = course_msg->drive.speed;
 		cur_course_ = course_msg->drive.steering_angle;
 		is_course_ = true;
-		//ROS_INFO("COURSE CALLBACK");
-	}
-
-	void SerialCallback(const std_msgs::Int32::ConstPtr &serial){
-		cur_speed_= serial->data * 0.1;
+		ROS_INFO("COURSE CALLBACK");
 	}
 
 	void ParkingAreaCallback(const std_msgs::Bool::ConstPtr &parking_area_msg) {
@@ -272,7 +262,7 @@ public:
 		waypoints_.clear();
 		waypoints_ = lane_msg->waypoints;
 		waypoints_size_ = waypoints_.size();
-		//ROS_INFO("LANE CALLBACK");
+		ROS_INFO("LANE CALLBACK");
 
 		is_onLane_ = lane_msg->onlane;
 
@@ -290,13 +280,6 @@ public:
 			}
         }
 	}
-	double calcLookaheadDistance(){
-		double temp_lookahead_distance;
-		if (cur_speed_<9.0) temp_lookahead_distance = 4.5;
-		else if (cur_speed_>=9.0) temp_lookahead_distance = 4.5 + 0.9*(cur_speed_ - 9.0);
-
-		return temp_lookahead_distance;
-	}
 
 	double calcSteeringAngle() {
         for(int i=0;i<waypoints_size_;i++) {
@@ -304,11 +287,11 @@ public:
 			if(dist>lookahead_dist_){
 				target_index_=i;
 				waypoint_target_index_ = waypoints_[i].waypoint_index;
-				//ROS_INFO("target_index: %d ld: %f",target_index_,lookahead_dist_);
+				ROS_INFO("target_index: %d ld: %f",target_index_,lookahead_dist_);
 
 				if(parking_count_ == 0 || parking_count_ == 1 ){
 					if((waypoints_[i].waypoint_index - waypoints_[0].waypoint_index == 1) || (waypoints_[i].waypoint_index - waypoints_[0].waypoint_index == 2  )) {
-					//	ROS_INFO("1");
+						ROS_INFO("1");
 						target_index_ = i;
 						waypoint_target_index_ = waypoints_[i].waypoint_index;
 						break;
@@ -326,14 +309,14 @@ public:
 			if(cur_course_ < 180) cur_course_ += 180;
 			else cur_course_ -= 180;
 			
-			//ROS_INFO("CURRENT COURSE INVERTED.");
+			ROS_INFO("CURRENT COURSE INVERTED.");
 		}
 
         double steering_angle;
         double target_x = waypoints_[target_index_].pose.pose.position.x;
         double target_y = waypoints_[target_index_].pose.pose.position.y;
 
-        //ROS_INFO("TARGET X=%f, TARGET Y=%f", target_x, target_y);
+        ROS_INFO("TARGET X=%f, TARGET Y=%f", target_x, target_y);
 
         double dx = target_x - cur_pose_.pose.position.x +0.000000001;
         double dy = target_y - cur_pose_.pose.position.y;
@@ -585,12 +568,12 @@ public:
 				current_state_msg_.current_state = waypoints_[0].mission_state;//for Vision
 				current_state_pub_.publish(current_state_msg_);
 
-				//ROS_INFO("CURRENT TARGET STATE INDEX=%d, MISSION_INDEX=%d, DIST=%f, PARKING_COUNT=%d", next_mission_index_, next_mission_state_, dist,parking_count_);	
+				ROS_INFO("CURRENT TARGET STATE INDEX=%d, MISSION_INDEX=%d, DIST=%f, PARKING_COUNT=%d", next_mission_index_, next_mission_state_, dist,parking_count_);	
 				
 				if(dist < 1.7 && next_mission_state_ == 1) {
 					while(1){
 						if(parking_count_==-1){
-							//ROS_INFO("PARKING SIGN DETECTED. WAITING FOR SIGN.");
+							ROS_INFO("PARKING SIGN DETECTED. WAITING FOR SIGN.");
 							ackermann_msg_.header.stamp = ros::Time::now();
               				ackermann_msg_.drive.speed = 0.0;
                 			ackermann_msg_.drive.steering_angle = 0.0;
@@ -639,8 +622,8 @@ public:
 						parking_trigger_ = true;
 						parking_count_++;
 						is_backward_ = true;
-						////ROS_INFO("CURRENTLY ARRIVED AT PARKING POINT.");
-						//ROS_INFO("STOP FOR 4SECONDS.");
+						ROS_INFO("CURRENTLY ARRIVED AT PARKING POINT.");
+						ROS_INFO("STOP FOR 4SECONDS.");
 
 						ackermann_msg_.header.stamp = ros::Time::now();
 						ackermann_msg_.drive.speed = 0.0;
@@ -663,7 +646,7 @@ public:
 				}
 
 				else if( dist < 1.5 && next_mission_state_ == 3) {
-					//ROS_INFO("PARKING MISSION IS DONE.");
+					ROS_INFO("PARKING MISSION IS DONE.");
 					if(parking_count_ == 1) {
 
 						ackermann_msg_.header.stamp = ros::Time::now();
@@ -681,7 +664,7 @@ public:
 				}
 			
 				else if( dist < 5.0 && next_mission_state_ == 4) {
-					//ROS_INFO("GET BACK TO MAIN LANE");
+					ROS_INFO("GET BACK TO MAIN LANE");
 
 					if(lane_number_!=0){
 					    lane_number_ = 0;
@@ -695,7 +678,7 @@ public:
 				else if(dist < 8.0 && next_mission_state_ == 5) {
                            	//TODO:정적장애물.//속도느리게해주기~~.
 
-					//before_intersection_ = true;
+					before_intersection_ = true;
 					private_nh_.setParam("/is_intersection",true);
 				}
 
@@ -749,13 +732,30 @@ public:
 						//cout<<"#####None obs######"<<endl;
 					}
 				}
+				/*
+		    	else if(dist < 3.0 && next_mission_state_ == 10) {
+					//TODO:intersection
+					//before_intersection_ = true;
+					//private_nh_.setParam("/is_intersection",true);
 
+					ROS_INFO("GOAL POINT READCHED. TERMINATING WAYPOINT FOLLOWER.");//for 학교 운동장 		
+					
+					is_control_ = false;
+					ackermann_msg_.header.stamp = ros::Time::now();
+					ackermann_msg_.drive.speed = 0.0;
+					ackermann_msg_.drive.steering_angle = 0.0;
+                			
+					ackermann_pub_.publish(ackermann_msg_);
+					
+					ros::shutdown();
+				}
+				*/
 		    	else if(dist < 7.0 && next_mission_state_ == 11) {
 					//TODO:intersection
 					before_intersection_ = true;
 					private_nh_.setParam("/is_intersection",true);
 				}
-				
+
 		    	else if(dist < 7.0 && next_mission_state_ == 12) {
 					//TODO:intersection
 					before_intersection_ = true;
@@ -764,24 +764,18 @@ public:
 
 		    	else if(dist < 7.0 && next_mission_state_ == 13) {
 					//TODO:intersection
-					before_intersection_ = true;
-					private_nh_.setParam("/is_intersection",true);
-				}
-
-		    	else if(dist < 7.0 && next_mission_state_ == 14) {
-					//TODO:intersection
 						before_intersection_ = true;
 						private_nh_.setParam("/is_intersection",true);
 				}
 
-				else if(dist < 7.0 && next_mission_state_ == 15) {
+				else if(dist < 7.0 && next_mission_state_ == 14) {
 					//TODO:intersection
 					before_intersection_ = true;
 					private_nh_.setParam("/is_intersection",true);
 				}
 		
-				else if(dist < 3.0 && next_mission_state_ == 16){
-					//ROS_INFO("GOAL POINT READCHED. TERMINATING WAYPOINT FOLLOWER.");		
+				else if(dist < 3.0 && next_mission_state_ == 15){
+					ROS_INFO("GOAL POINT READCHED. TERMINATING WAYPOINT FOLLOWER.");		
 					
 					is_control_ = false;
 					ackermann_msg_.header.stamp = ros::Time::now();
@@ -820,8 +814,6 @@ public:
 		
 				else if(before_intersection_) {				//decelerate for traffic_sign detection
 					speed = decelate_speed_;
-					lookahead_dist_= calcLookaheadDistance();
-					//if(cur_steer>11)lookahead_dist_= decelate_lookahead_dist_;
 					lookahead_dist_= decelate_lookahead_dist_;
 				}
 
@@ -834,30 +826,22 @@ public:
 					lookahead_dist_= 4.5;
 				}
 			
-				 else if(/*(waypoints_[0].mission_state)>=4 &&*/ (waypoints_[0].mission_state)==9){		//decelerate for KID ZONE
+				 else if((waypoints_[0].mission_state)>=4 && (waypoints_[0].mission_state)<=9){		//decelerate for KID ZONE
 					speed=decelate_speed_;
-					lookahead_dist_= calcLookaheadDistance();
-					//if(cur_steer>11)lookahead_dist_= decelate_lookahead_dist_;
-					lookahead_dist_= decelate_lookahead_dist_;
+					lookahead_dist_=decelate_lookahead_dist_;
 				}
 
 				 else if((parking_count_==-2)&&(abs(curvature_) > 0.03||abs(cur_steer) > 13)) { //curvature value need to change
 					speed = decelate_speed_; //decel = 2.5
-					lookahead_dist_= calcLookaheadDistance();
-					//if(cur_steer>11)lookahead_dist_= decelate_lookahead_dist_;
-					lookahead_dist_= decelate_lookahead_dist_;
+					lookahead_dist_ = decelate_lookahead_dist_;
 				}
 
 				else {
 					speed = init_speed_;
-					lookahead_dist_= calcLookaheadDistance();
-					//if(cur_steer>11)lookahead_dist_= init_lookahead_dist_;
-					lookahead_dist_= init_lookahead_dist_;
+					lookahead_dist_=init_lookahead_dist_;
 				}
 
-				cout << "CURRENT ACKERMANN : " << speed << " , " << cur_steer << endl;
-				cout << "GPS_SPEED : " << cur_speed_ << endl;
-				cout << "CURRENT LD : " << lookahead_dist_ << endl;
+				ROS_INFO("SPEED=%f, STEER=%f", speed, cur_steer);
 
 				ackermann_msg_.header.stamp = ros::Time::now();
 				ackermann_msg_.drive.speed = speed;
@@ -883,7 +867,6 @@ public:
 			state_pub_.publish(state_msg_);
 		}
 	}
-	
 };
 
 int main(int argc, char **argv) {
