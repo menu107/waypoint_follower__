@@ -587,7 +587,7 @@ public:
 
 				//ROS_INFO("CURRENT TARGET STATE INDEX=%d, MISSION_INDEX=%d, DIST=%f, PARKING_COUNT=%d", next_mission_index_, next_mission_state_, dist,parking_count_);	
 				
-				if(dist < 1.7 && next_mission_state_ == 1) {
+				if(dist < 2.7 && next_mission_state_ == 1) {
 					while(1){
 						if(parking_count_==-1){
 							//ROS_INFO("PARKING SIGN DETECTED. WAITING FOR SIGN.");
@@ -650,7 +650,7 @@ public:
 
 						is_control_ = false;
 						ros::Time::init();
-						ros::Duration(7.0).sleep();
+						ros::Duration(12.0).sleep();
 
 						private_nh_.setParam("/waypoint_loader_node/parking_state", parking_count_);
 						ackermann_msg_.header.stamp = ros::Time::now();
@@ -695,21 +695,21 @@ public:
 				else if(dist < 8.0 && next_mission_state_ == 5) {
                            	//TODO:정적장애물.//속도느리게해주기~~.
 
-					//before_intersection_ = true;
-					private_nh_.setParam("/is_intersection",true);
+					before_intersection_ = true;
+					//private_nh_.setParam("/is_intersection",true);
 				}
 
-				else if(dist < 7.0 && next_mission_state_ == 6) {
+				else if(dist < 10.0 && next_mission_state_ == 6) {
 					//Intersection
-					//before_intersection_ = true;
-					//private_nh_.setParam("/is_intersection",true);
+					before_intersection_ = true;
+					private_nh_.setParam("/is_intersection",true);
 	
 				}
 
-				else if(dist<7.0 && next_mission_state_ == 7){
+				else if(dist<10.0 && next_mission_state_ == 7){
 				//Kidszone
-					//before_intersection_ = true;
-					//private_nh_.setParam("/is_intersection",true);
+					before_intersection_ = true;
+					private_nh_.setParam("/is_intersection",true);
 
 				}
 		    	else if(dist < 7.0 && next_mission_state_ == 8) {
@@ -750,31 +750,31 @@ public:
 					}
 				}
 
-		    	else if(dist < 7.0 && next_mission_state_ == 11) {
+		    	else if(dist < 10.0 && next_mission_state_ == 11) {
 					//TODO:intersection
 					before_intersection_ = true;
 					private_nh_.setParam("/is_intersection",true);
 				}
 				
-		    	else if(dist < 7.0 && next_mission_state_ == 12) {
+		    	else if(dist < 10.0 && next_mission_state_ == 12) {
 					//TODO:intersection
 					before_intersection_ = true;
 					private_nh_.setParam("/is_intersection",true);
 				}
 
-		    	else if(dist < 7.0 && next_mission_state_ == 13) {
+		    	else if(dist < 10.0 && next_mission_state_ == 13) {
 					//TODO:intersection
 					before_intersection_ = true;
 					private_nh_.setParam("/is_intersection",true);
 				}
 
-		    	else if(dist < 7.0 && next_mission_state_ == 14) {
+		    	else if(dist < 10.0 && next_mission_state_ == 14) {
 					//TODO:intersection
 						before_intersection_ = true;
 						private_nh_.setParam("/is_intersection",true);
 				}
 
-				else if(dist < 7.0 && next_mission_state_ == 15) {
+				else if(dist < 10.0 && next_mission_state_ == 15) {
 					//TODO:intersection
 					before_intersection_ = true;
 					private_nh_.setParam("/is_intersection",true);
@@ -820,7 +820,6 @@ public:
 		
 				else if(before_intersection_) {				//decelerate for traffic_sign detection
 					speed = decelate_speed_;
-					lookahead_dist_= calcLookaheadDistance();
 					//if(cur_steer>11)lookahead_dist_= decelate_lookahead_dist_;
 					lookahead_dist_= decelate_lookahead_dist_;
 				}
@@ -834,16 +833,19 @@ public:
 					lookahead_dist_= 4.5;
 				}
 			
-				 else if(/*(waypoints_[0].mission_state)>=4 &&*/ (waypoints_[0].mission_state)==9){		//decelerate for KID ZONE
+				 else if((waypoints_[0].mission_state)>=4 && (waypoints_[0].mission_state)<=10){		//decelerate for KID ZONE
 					speed=decelate_speed_;
-					lookahead_dist_= calcLookaheadDistance();
 					//if(cur_steer>11)lookahead_dist_= decelate_lookahead_dist_;
 					lookahead_dist_= decelate_lookahead_dist_;
+				}
+				 else if((waypoints_[0].mission_state)==15){		//decelerate for KID ZONE
+					speed=4.5;
+					//if(cur_steer>11)lookahead_dist_= decelate_lookahead_dist_;
+					lookahead_dist_= 10.0;
 				}
 
 				 else if((parking_count_==-2)&&(abs(curvature_) > 0.03||abs(cur_steer) > 13)) { //curvature value need to change
 					speed = decelate_speed_; //decel = 2.5
-					lookahead_dist_= calcLookaheadDistance();
 					//if(cur_steer>11)lookahead_dist_= decelate_lookahead_dist_;
 					lookahead_dist_= decelate_lookahead_dist_;
 				}

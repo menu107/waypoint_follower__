@@ -8,22 +8,22 @@
 	<arg name="decelate_lookahead_distance" default="5.0" />
 	<arg name="parking_lookahead_distance" default="1.5" />
 	<arg name="current_mission_state" default="0" />
-	<arg name="first_state_index" default="58" />
-	<arg name="second_state_index" default="70" />
-	<arg name="third_state_index" default="80" />
-	<arg name="fourth_state_index" default="102" />
-	<arg name="fifth_state_index" default="138" />
-	<arg name="sixth_state_index" default="237" />
-	<arg name="seventh_state_index" default="290" />
-	<arg name="eighth_state_index" default="323" />
-	<arg name="nineth_state_index" default="441" />
-	<arg name="tenth_state_index" default="490" />
-	<arg name="eleventh_state_index" default="503" />
-	<arg name="twelveth_state_index" default="602" />
-	<arg name="thirteenth_state_index" default="678" />
-	<arg name="fourteenth_state_index" default="958" />
-	<arg name="fifteenth_state_index" default="1001" />
-	<arg name="sixteenth_state_index" default="1161" />
+	<arg name="first_state_index" default="64" />
+	<arg name="second_state_index" default="74" />
+	<arg name="third_state_index" default="83" />
+	<arg name="fourth_state_index" default="99" />
+	<arg name="fifth_state_index" default="141" />
+	<arg name="sixth_state_index" default="238" />
+	<arg name="seventh_state_index" default="291" />
+	<arg name="eighth_state_index" default="324" />
+	<arg name="nineth_state_index" default="442" />
+	<arg name="tenth_state_index" default="491" />
+	<arg name="eleventh_state_index" default="504" />
+	<arg name="twelveth_state_index" default="603" />
+	<arg name="thirteenth_state_index" default="679" />
+	<arg name="fourteenth_state_index" default="959" />
+	<arg name="fifteenth_state_index" default="1002" />
+	<arg name="sixteenth_state_index" default="1174" />
 	<arg name="seventeenth_state_index" default="1200" />
 	<arg name="lane_final" default="0" />
 
